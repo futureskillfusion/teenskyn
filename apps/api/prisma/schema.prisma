@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  title     String
+  slug      String    @unique
+  imageUrl  String?
+  order     Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+enum ProductStatus {
+  draft
+  active
+  archived
+}
+
+model Product {
+  id             String           @id @default(cuid())
+  title          String
+  subtitle       String?
+  ribbonText     String?
+  description    String           @default("")
+  thumbnailUrl   String?
+  purchasable    Boolean          @default(true)
+  order          Int              @default(0)
+  status         ProductStatus    @default(active)
+  categoryId     String?
+  category       Category?        @relation(fields: [categoryId], references: [id])
+  images         ProductImage[]
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  type      String   @default("image")
+  createdAt DateTime @default(now())
+}
+
+model ProductVariant {
+  id                String      @id @default(cuid())
+  productId         String
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title             String      @default("Default Variant")
+  sku               String?
+  imageUrl          String?
+  priceInCents      Int
+  salePriceInCents  Int?
+  currency          String      @default("myr")
+  manageInventory   Boolean     @default(true)
+  inventoryQuantity Int         @default(0)
+  weight            Float?
+  orderItems        OrderItem[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  phone          String?
+  passwordHash   String?
+  stripeCustomerId String?
+  orders         Order[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum OrderStatus {
+  pending
+  paid
+  fulfilled
+  cancelled
+  refunded
+}
+
+model Order {
+  id                      String      @id @default(cuid())
+  orderNumber             String      @unique
+  customerId              String?
+  customer                Customer?   @relation(fields: [customerId], references: [id])
+  status                  OrderStatus @default(pending)
+  subtotalInCents         Int
+  totalInCents            Int
+  currency                String      @default("myr")
+  customerEmail           String
+  shippingAddress         String?
+  stripeCheckoutSessionId String?     @unique
+  stripePaymentIntentId   String?
+  items                   OrderItem[]
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+}
+
+model OrderItem {
+  id                  String          @id @default(cuid())
+  orderId             String
+  order               Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId           String?
+  product             Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId           String?
+  variant             ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  titleSnapshot        String
+  variantTitleSnapshot String?
+  skuSnapshot          String?
+  unitPriceInCents     Int
+  quantity             Int
+  lineTotalInCents     Int
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String
+  productId String?
+  sessionId String
+  metadata  String?
+  createdAt DateTime @default(now())
+}

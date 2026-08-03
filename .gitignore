@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
+apps/api/prisma/test.db
+apps/api/prisma/test.db-journal
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+app.tar.gz
+vault/
