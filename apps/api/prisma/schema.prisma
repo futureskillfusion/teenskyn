@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -39,7 +39,7 @@ model Product {
   title          String
   subtitle       String?
   ribbonText     String?
-  description    String           @default("")
+  description    String           @default("") @db.Text
   thumbnailUrl   String?
   purchasable    Boolean          @default(true)
   order          Int              @default(0)
@@ -112,7 +112,7 @@ model Order {
   totalInCents            Int
   currency                String      @default("myr")
   customerEmail           String
-  shippingAddress         String?
+  shippingAddress         String?     @db.Text
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId   String?
   items                   OrderItem[]
@@ -141,6 +141,6 @@ model AnalyticsEvent {
   type      String
   productId String?
   sessionId String
-  metadata  String?
+  metadata  String?  @db.Text
   createdAt DateTime @default(now())
 }

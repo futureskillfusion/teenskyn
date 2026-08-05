@@ -8,7 +8,7 @@
 		"build": "concurrently --raw \"npm run build --prefix apps/web\" \"npm run build --prefix apps/api\"",
 		"start": "concurrently --kill-others --raw \"npm run start --prefix apps/web\" \"npm run start --prefix apps/api\"",
 		"lint": "concurrently --raw \"npm run lint --prefix apps/web\"",
-		"db:migrate": "npm run db:migrate --prefix apps/api",
+		"db:push": "npm run db:push --prefix apps/api",
 		"db:seed": "npm run db:seed --prefix apps/api"
 	},
 	"dependencies": {
