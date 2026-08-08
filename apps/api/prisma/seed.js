@@ -1,8 +1,6 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../src/lib/prisma.js';
 
 const PRODUCTS_SHOT = 'https://horizons-cdn.hostinger.com/0ee21065-9453-420a-8612-dba671feedfb/8cc8f64d46ba18641957e60883c20c34.png';
 

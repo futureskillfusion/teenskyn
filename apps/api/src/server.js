@@ -9,30 +9,13 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 const app = createApp();
 const port = process.env.PORT || 4000;
 
-// Connect once, up front, before accepting any traffic. Letting concurrent
-// first requests race to lazily initialize the Prisma query engine is a
-// known trigger for a "PANIC: timer has gone away" crash on cold start.
-async function connectWithRetry(attempts = 5, delayMs = 2000) {
-  for (let i = 1; i <= attempts; i++) {
-    try {
-      await prisma.$connect();
-      return;
-    } catch (err) {
-      console.error(`Database connection attempt ${i}/${attempts} failed:`, err.message);
-      if (i === attempts) throw err;
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-}
-
-async function start() {
-  await connectWithRetry();
-  app.listen(port, () => {
-    console.log(`API listening on http://localhost:${port}`);
-  });
-}
-
-start().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+// Hostinger's platform expects listen() within a few seconds of startup, so
+// the HTTP server comes up immediately. The database connects in the
+// background — the first request just waits on the same in-flight connect.
+app.listen(port, () => {
+  console.log(`API listening on http://localhost:${port}`);
 });
+
+prisma.$connect()
+  .then(() => console.log('Database connected'))
+  .catch((err) => console.error('Database connection failed:', err.message));
