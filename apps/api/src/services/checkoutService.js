@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { stripe } from '../lib/stripe.js';
-import { generateOrderNumber } from './orderService.js';
+import { generateOrderNumber, upsertCustomerByEmail } from './orderService.js';
+import { decrementInventoryForOrder } from './inventoryService.js';
 
 class CheckoutError extends Error {
   constructor(message, status = 400) {
@@ -9,7 +10,7 @@ class CheckoutError extends Error {
   }
 }
 
-export async function initializeCheckout({ items, successUrl, cancelUrl }) {
+async function buildOrderItems(items) {
   if (!items || !items.length) {
     throw new CheckoutError('Cart is empty');
   }
@@ -59,11 +60,18 @@ export async function initializeCheckout({ items, successUrl, cancelUrl }) {
     });
   }
 
+  return { lineItems, orderItemsData, subtotalInCents };
+}
+
+export async function initializeCheckout({ items, successUrl, cancelUrl }) {
+  const { lineItems, orderItemsData, subtotalInCents } = await buildOrderItems(items);
+
   const orderNumber = await generateOrderNumber();
   const order = await prisma.order.create({
     data: {
       orderNumber,
       status: 'pending',
+      paymentMethod: 'stripe',
       subtotalInCents,
       totalInCents: subtotalInCents,
       currency: 'myr',
@@ -86,4 +94,36 @@ export async function initializeCheckout({ items, successUrl, cancelUrl }) {
   });
 
   return { url: session.url };
+}
+
+export async function createCodOrder({ items, customer }) {
+  if (!customer?.name || !customer?.email || !customer?.phone || !customer?.address) {
+    throw new CheckoutError('Name, email, phone and address are required for cash on delivery');
+  }
+
+  const { orderItemsData, subtotalInCents } = await buildOrderItems(items);
+
+  const orderNumber = await generateOrderNumber();
+  const customerRecord = await upsertCustomerByEmail({ email: customer.email, name: customer.name, phone: customer.phone });
+
+  const order = await prisma.order.create({
+    data: {
+      orderNumber,
+      status: 'pending',
+      paymentMethod: 'cod',
+      subtotalInCents,
+      totalInCents: subtotalInCents,
+      currency: 'myr',
+      customerId: customerRecord.id,
+      customerEmail: customer.email,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      shippingAddress: customer.address,
+      items: { create: orderItemsData },
+    },
+  });
+
+  await decrementInventoryForOrder(order.id);
+
+  return { orderNumber: order.orderNumber, orderId: order.id };
 }

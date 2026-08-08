@@ -48,6 +48,7 @@ export default function OrderDetailPage() {
           <p className="text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</p>
         </div>
         <div className="flex items-center gap-3">
+          <Badge variant="outline">{order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment'}</Badge>
           <Badge className="capitalize">{order.status}</Badge>
           <Select value={order.status} onValueChange={handleStatusChange} disabled={updating}>
             <SelectTrigger className="w-44"><SelectValue placeholder="Update status" /></SelectTrigger>
@@ -103,10 +104,17 @@ export default function OrderDetailPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Customer</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p className="font-semibold text-[#001a4d]">{order.customer?.name || 'Guest'}</p>
+            <p className="font-semibold text-[#001a4d]">{order.customerName || order.customer?.name || 'Guest'}</p>
             <p className="text-muted-foreground">{order.customerEmail}</p>
+            {order.customerPhone && <p className="text-muted-foreground">{order.customerPhone}</p>}
+            {order.shippingAddress && (
+              <div className="pt-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Delivery address</p>
+                <p className="mt-1 whitespace-pre-line">{order.shippingAddress}</p>
+              </div>
+            )}
             {order.customer && (
-              <Link to={`/admin/customers/${order.customer.id}`} className="inline-block text-sm font-semibold text-[#001a4d] hover:underline">
+              <Link to={`/admin/customers/${order.customer.id}`} className="inline-block text-sm font-semibold text-[#001a4d] hover:underline pt-1">
                 View customer history →
               </Link>
             )}

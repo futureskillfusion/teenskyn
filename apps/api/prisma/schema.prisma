@@ -109,10 +109,13 @@ model Order {
   customerId              String?
   customer                Customer?   @relation(fields: [customerId], references: [id])
   status                  OrderStatus @default(pending)
+  paymentMethod           String      @default("stripe")
   subtotalInCents         Int
   totalInCents            Int
   currency                String      @default("myr")
   customerEmail           String
+  customerName            String?
+  customerPhone           String?
   shippingAddress         String?     @db.Text
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId   String?

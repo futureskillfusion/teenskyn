@@ -63,6 +63,7 @@ export default function OrdersListPage() {
               <TableRow>
                 <TableHead>Order</TableHead>
                 <TableHead>Customer</TableHead>
+                <TableHead>Payment</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Date</TableHead>
@@ -73,6 +74,7 @@ export default function OrdersListPage() {
                 <TableRow key={order.id}>
                   <TableCell><Link to={`/admin/orders/${order.id}`} className="font-semibold text-[#001a4d] hover:underline">{order.orderNumber}</Link></TableCell>
                   <TableCell>{order.customerEmail || '—'}</TableCell>
+                  <TableCell><Badge variant="outline">{order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online'}</Badge></TableCell>
                   <TableCell><Badge variant={STATUS_VARIANT[order.status]} className="capitalize">{order.status}</Badge></TableCell>
                   <TableCell className="text-right">{formatCurrency(order.totalInCents, MYR_INFO)}</TableCell>
                   <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>

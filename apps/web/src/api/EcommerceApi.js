@@ -95,3 +95,17 @@ export async function initializeCheckout({ items, successUrl, cancelUrl }) {
     body: JSON.stringify({ items, successUrl, cancelUrl }),
   });
 }
+
+/**
+ * Place a Cash on Delivery order (no payment gateway involved).
+ * @param {Object} params
+ * @param {Array<{variant_id:string, quantity:number}>} params.items
+ * @param {{name:string, email:string, phone:string, address:string}} params.customer
+ * @returns {Promise<{orderNumber:string, orderId:string}>}
+ */
+export async function createCodOrder({ items, customer }) {
+  return request("/checkout/cod", {
+    method: "POST",
+    body: JSON.stringify({ items, customer }),
+  });
+}

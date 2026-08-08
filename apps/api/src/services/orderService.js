@@ -37,11 +37,11 @@ export function updateOrderStatus(id, status) {
   return prisma.order.update({ where: { id }, data: { status } });
 }
 
-export async function upsertCustomerByEmail({ email, name }) {
+export async function upsertCustomerByEmail({ email, name, phone }) {
   return prisma.customer.upsert({
     where: { email },
-    update: { ...(name ? { name } : {}) },
-    create: { email, name: name || null },
+    update: { ...(name ? { name } : {}), ...(phone ? { phone } : {}) },
+    create: { email, name: name || null, phone: phone || null },
   });
 }
 
