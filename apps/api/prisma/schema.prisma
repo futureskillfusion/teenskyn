@@ -73,6 +73,8 @@ model ProductVariant {
   imageUrl          String?
   priceInCents      Int
   salePriceInCents  Int?
+  saleStartsAt      DateTime?
+  saleEndsAt        DateTime?
   currency          String      @default("myr")
   manageInventory   Boolean     @default(true)
   inventoryQuantity Int         @default(0)

@@ -115,6 +115,9 @@ export default function ProductDetailPage() {
                 {selectedVariant?.sale_price_in_cents && (
                   <span className="text-lg text-[#001a4d]/40 line-through">{selectedVariant.price_formatted}</span>
                 )}
+                {selectedVariant?.sale_price_in_cents && selectedVariant?.sale_percent > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-extrabold px-2.5 py-1 rounded-full">-{selectedVariant.sale_percent}%</span>
+                )}
               </div>
 
               {product.description && (

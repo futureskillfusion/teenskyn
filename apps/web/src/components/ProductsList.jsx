@@ -54,6 +54,11 @@ const ProductCard = ({ product, index }) => {
                 {product.ribbon_text}
               </div>
             )}
+            {hasSale && displayVariant?.sale_percent > 0 && (
+              <div className="absolute bottom-3 left-3 bg-red-500 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow">
+                -{displayVariant.sale_percent}%
+              </div>
+            )}
             <div className="absolute top-3 right-3 bg-[#001a4d] text-[#FFD700] text-sm font-extrabold px-3 py-1 rounded-full shadow">
               {hasSale && <span className="line-through opacity-60 mr-1 text-xs">{originalPrice}</span>}
               {displayPrice}

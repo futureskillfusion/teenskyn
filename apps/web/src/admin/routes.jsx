@@ -5,6 +5,7 @@ import RequireAdminAuth from '@/admin/components/RequireAdminAuth';
 import AdminLayout from '@/admin/components/AdminLayout';
 import LoginPage from '@/admin/pages/LoginPage';
 import DashboardPage from '@/admin/pages/DashboardPage';
+import SalesPage from '@/admin/pages/SalesPage';
 import ProductsListPage from '@/admin/pages/products/ProductsListPage';
 import ProductFormPage from '@/admin/pages/products/ProductFormPage';
 import OrdersListPage from '@/admin/pages/orders/OrdersListPage';
@@ -28,6 +29,7 @@ export default function AdminApp() {
           <Route index element={<DashboardPage />} />
           <Route path="products" element={<ProductsListPage />} />
           <Route path="products/:id" element={<ProductFormPage />} />
+          <Route path="sales" element={<SalesPage />} />
           <Route path="orders" element={<OrdersListPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="customers" element={<CustomersListPage />} />

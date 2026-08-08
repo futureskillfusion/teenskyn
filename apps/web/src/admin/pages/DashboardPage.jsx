@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, TrendingUp, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { Loader2, TrendingUp, ShoppingBag, AlertTriangle, Tag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -25,10 +25,14 @@ function StatCard({ label, value, sub }) {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
+  const [activeSalesCount, setActiveSalesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     adminApi.get('/dashboard/summary').then(setSummary).finally(() => setLoading(false));
+    adminApi.get('/sales').then((data) => {
+      setActiveSalesCount(data.sales.filter((s) => s.sale_status === 'active').length);
+    });
   }, []);
 
   if (loading) {
@@ -44,10 +48,21 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Store performance at a glance.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Revenue today" value={formatCurrency(summary.revenue.today.totalInCents, MYR_INFO)} sub={`${summary.revenue.today.orderCount} orders`} />
         <StatCard label="Revenue (7 days)" value={formatCurrency(summary.revenue.last7d.totalInCents, MYR_INFO)} sub={`${summary.revenue.last7d.orderCount} orders`} />
         <StatCard label="Revenue (30 days)" value={formatCurrency(summary.revenue.last30d.totalInCents, MYR_INFO)} sub={`${summary.revenue.last30d.orderCount} orders`} />
+        <Link to="/admin/sales">
+          <Card className="h-full transition-colors hover:border-[#FFD700]">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Tag size={14} /> Active sales</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-display text-3xl font-extrabold text-[#001a4d]">{activeSalesCount}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Manage offers →</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

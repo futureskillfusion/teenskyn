@@ -17,6 +17,7 @@ import { adminCategoriesRouter } from './routes/admin/categories.routes.js';
 import { adminOrdersRouter } from './routes/admin/orders.routes.js';
 import { adminCustomersRouter } from './routes/admin/customers.routes.js';
 import { adminDashboardRouter } from './routes/admin/dashboard.routes.js';
+import { adminSalesRouter } from './routes/admin/sales.routes.js';
 
 import { requireAdminAuth } from './middleware/requireAdminAuth.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -47,6 +48,7 @@ export function createApp() {
   app.use('/api/admin', requireAdminAuth, adminOrdersRouter);
   app.use('/api/admin', requireAdminAuth, adminCustomersRouter);
   app.use('/api/admin', requireAdminAuth, adminDashboardRouter);
+  app.use('/api/admin', requireAdminAuth, adminSalesRouter);
 
   // In production the built React app (storefront + /admin panel) is served
   // by this same Node process, so the host only needs to run one app.

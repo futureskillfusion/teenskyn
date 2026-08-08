@@ -13,8 +13,25 @@ export function formatMoney(priceInCents, currencyInfo) {
   return currencyInfo?.template ? currencyInfo.template.replace('$1', amount) : `${currencyInfo?.symbol || ''}${amount}`;
 }
 
+// A sale is only "live" (visible to shoppers) inside its start/end window.
+// Outside that window the variant silently falls back to its regular price
+// — no cron job needed, the sale just closes itself the moment it's read.
+export function getSaleStatus(variant, now = new Date()) {
+  if (variant.salePriceInCents === null || variant.salePriceInCents === undefined) return 'none';
+  if (variant.saleStartsAt && now < new Date(variant.saleStartsAt)) return 'scheduled';
+  if (variant.saleEndsAt && now > new Date(variant.saleEndsAt)) return 'expired';
+  return 'active';
+}
+
+export function getSalePercent(variant) {
+  if (variant.salePriceInCents === null || variant.salePriceInCents === undefined || !variant.priceInCents) return null;
+  return Math.round((1 - variant.salePriceInCents / variant.priceInCents) * 100);
+}
+
 export function normalizeVariant(variant) {
   const currencyInfo = currencyInfoFor(variant.currency);
+  const saleStatus = getSaleStatus(variant);
+  const effectiveSalePriceInCents = saleStatus === 'active' ? variant.salePriceInCents : null;
 
   return {
     id: variant.id,
@@ -22,22 +39,30 @@ export function normalizeVariant(variant) {
     image_url: variant.imageUrl || null,
     sku: variant.sku || null,
     price_in_cents: variant.priceInCents,
-    sale_price_in_cents: variant.salePriceInCents ?? null,
+    sale_price_in_cents: effectiveSalePriceInCents,
     currency: variant.currency,
     currency_info: currencyInfo,
     price_formatted: formatMoney(variant.priceInCents, currencyInfo),
-    sale_price_formatted: variant.salePriceInCents ? formatMoney(variant.salePriceInCents, currencyInfo) : null,
+    sale_price_formatted: effectiveSalePriceInCents ? formatMoney(effectiveSalePriceInCents, currencyInfo) : null,
     manage_inventory: variant.manageInventory,
     weight: variant.weight ?? null,
     options: [],
     inventory_quantity: variant.inventoryQuantity,
+    // Admin-only extras (ignored by the storefront, used by the Sales dashboard/product form).
+    // Unlike sale_price_in_cents above, this stays populated even when the sale
+    // is scheduled/expired, so the admin edit form can still prefill it.
+    sale_price_in_cents_configured: variant.salePriceInCents ?? null,
+    sale_status: saleStatus,
+    sale_percent: getSalePercent(variant),
+    sale_starts_at: variant.saleStartsAt || null,
+    sale_ends_at: variant.saleEndsAt || null,
   };
 }
 
-function lowestPriceVariant(variants) {
+function lowestPriceVariant(variants, now = new Date()) {
   return variants.reduce((acc, curr) => {
-    const accPrice = acc.salePriceInCents ?? acc.priceInCents;
-    const currPrice = curr.salePriceInCents ?? curr.priceInCents;
+    const accPrice = getSaleStatus(acc, now) === 'active' ? acc.salePriceInCents : acc.priceInCents;
+    const currPrice = getSaleStatus(curr, now) === 'active' ? curr.salePriceInCents : curr.priceInCents;
     return accPrice < currPrice ? acc : curr;
   });
 }
@@ -45,7 +70,9 @@ function lowestPriceVariant(variants) {
 export function normalizeProduct(product) {
   const variants = product.variants || [];
   const selectedVariant = variants.length ? lowestPriceVariant(variants) : null;
-  const priceInCents = selectedVariant ? (selectedVariant.salePriceInCents ?? selectedVariant.priceInCents) : 0;
+  const priceInCents = selectedVariant
+    ? (getSaleStatus(selectedVariant) === 'active' ? selectedVariant.salePriceInCents : selectedVariant.priceInCents)
+    : 0;
   const currency = selectedVariant?.currency || 'myr';
 
   return {

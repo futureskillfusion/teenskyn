@@ -41,6 +41,8 @@ const variantSchema = z.object({
   sku: z.string().optional().nullable(),
   priceInCents: z.number().int().min(0),
   salePriceInCents: z.number().int().min(0).optional().nullable(),
+  saleStartsAt: z.string().datetime().optional().nullable(),
+  saleEndsAt: z.string().datetime().optional().nullable(),
   manageInventory: z.boolean().optional(),
   inventoryQuantity: z.number().int().min(0).optional(),
 });

@@ -78,6 +78,8 @@ export async function createProduct(data) {
           sku: v.sku || null,
           priceInCents: v.priceInCents,
           salePriceInCents: v.salePriceInCents ?? null,
+          saleStartsAt: v.saleStartsAt ? new Date(v.saleStartsAt) : null,
+          saleEndsAt: v.saleEndsAt ? new Date(v.saleEndsAt) : null,
           currency: 'myr',
           manageInventory: v.manageInventory ?? true,
           inventoryQuantity: v.inventoryQuantity ?? 0,
@@ -114,6 +116,8 @@ export async function updateProduct(id, data) {
         sku: v.sku || null,
         priceInCents: v.priceInCents,
         salePriceInCents: v.salePriceInCents ?? null,
+        saleStartsAt: v.saleStartsAt ? new Date(v.saleStartsAt) : null,
+        saleEndsAt: v.saleEndsAt ? new Date(v.saleEndsAt) : null,
         manageInventory: v.manageInventory ?? true,
         inventoryQuantity: v.inventoryQuantity ?? 0,
       };
@@ -127,6 +131,21 @@ export async function updateProduct(id, data) {
   }
 
   return getAdminProduct(id);
+}
+
+export function listVariantsWithSales() {
+  return prisma.productVariant.findMany({
+    where: { salePriceInCents: { not: null } },
+    include: { product: true },
+    orderBy: { updatedAt: 'desc' },
+  });
+}
+
+export function clearVariantSale(variantId) {
+  return prisma.productVariant.update({
+    where: { id: variantId },
+    data: { salePriceInCents: null, saleStartsAt: null, saleEndsAt: null },
+  });
 }
 
 export function softDeleteProduct(id) {

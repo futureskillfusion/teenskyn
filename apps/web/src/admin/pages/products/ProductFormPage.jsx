@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, ArrowLeft, Plus, Trash2, Upload } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, Trash2, Upload, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -14,13 +15,26 @@ import { adminApi } from '@/admin/lib/adminApi';
 const centsToRinggit = (cents) => (cents === null || cents === undefined ? '' : (cents / 100).toFixed(2));
 const ringgitToCents = (value) => Math.round(parseFloat(value || '0') * 100);
 
+const SALE_STATUS_LABEL = { active: 'Sale active', scheduled: 'Sale scheduled', expired: 'Sale ended' };
+const SALE_STATUS_VARIANT = { active: 'default', scheduled: 'secondary', expired: 'outline' };
+
+const daysUntil = (isoDate) => {
+  if (!isoDate) return 7;
+  const diffMs = new Date(isoDate).getTime() - Date.now();
+  return Math.max(1, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
+};
+
 const emptyVariant = () => ({
   title: 'Default Variant',
   sku: '',
   price: '',
-  salePrice: '',
   manageInventory: true,
   inventoryQuantity: 0,
+  saleEnabled: false,
+  salePercent: '20',
+  saleDurationDays: '7',
+  saleStatus: 'none',
+  saleEndsAt: null,
 });
 
 export default function ProductFormPage() {
@@ -62,9 +76,13 @@ export default function ProductFormPage() {
         title: v.title,
         sku: v.sku || '',
         price: centsToRinggit(v.price_in_cents),
-        salePrice: v.sale_price_in_cents ? centsToRinggit(v.sale_price_in_cents) : '',
         manageInventory: v.manage_inventory,
         inventoryQuantity: v.inventory_quantity,
+        saleEnabled: Boolean(v.sale_price_in_cents_configured) && v.sale_status !== 'expired',
+        salePercent: v.sale_percent !== null ? String(v.sale_percent) : '20',
+        saleDurationDays: String(daysUntil(v.sale_ends_at)),
+        saleStatus: v.sale_status || 'none',
+        saleEndsAt: v.sale_ends_at,
       })));
       setLoading(false);
     });
@@ -89,15 +107,24 @@ export default function ProductFormPage() {
       status,
       categoryId: categoryId || null,
       purchasable,
-      variants: variants.map((v) => ({
-        ...(v.id ? { id: v.id } : {}),
-        title: v.title || 'Default Variant',
-        sku: v.sku || null,
-        priceInCents: ringgitToCents(v.price),
-        salePriceInCents: v.salePrice ? ringgitToCents(v.salePrice) : null,
-        manageInventory: v.manageInventory,
-        inventoryQuantity: Number(v.inventoryQuantity) || 0,
-      })),
+      variants: variants.map((v) => {
+        const priceInCents = ringgitToCents(v.price);
+        const percent = Math.min(99, Math.max(0, Number(v.salePercent) || 0));
+        const durationDays = Math.max(1, Number(v.saleDurationDays) || 1);
+        const saleActive = v.saleEnabled && percent > 0;
+
+        return {
+          ...(v.id ? { id: v.id } : {}),
+          title: v.title || 'Default Variant',
+          sku: v.sku || null,
+          priceInCents,
+          salePriceInCents: saleActive ? Math.round(priceInCents * (1 - percent / 100)) : null,
+          saleStartsAt: saleActive ? new Date().toISOString() : null,
+          saleEndsAt: saleActive ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString() : null,
+          manageInventory: v.manageInventory,
+          inventoryQuantity: Number(v.inventoryQuantity) || 0,
+        };
+      }),
     };
 
     try {
@@ -201,41 +228,81 @@ export default function ProductFormPage() {
             <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addVariant}><Plus size={14} /> Add variant</Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {variants.map((v, index) => (
-              <div key={v.id || index} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-6">
-                <div className="lg:col-span-2 space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Variant title</label>
-                  <Input value={v.title} onChange={(e) => updateVariant(index, { title: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">SKU</label>
-                  <Input value={v.sku} onChange={(e) => updateVariant(index, { sku: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Price (RM)</label>
-                  <Input type="number" step="0.01" min="0" required value={v.price} onChange={(e) => updateVariant(index, { price: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Sale price (RM)</label>
-                  <Input type="number" step="0.01" min="0" value={v.salePrice} onChange={(e) => updateVariant(index, { salePrice: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Stock</label>
-                  <Input type="number" min="0" value={v.inventoryQuantity} onChange={(e) => updateVariant(index, { inventoryQuantity: e.target.value })} />
-                </div>
-                <div className="flex items-center gap-2 lg:col-span-3">
-                  <Switch checked={v.manageInventory} onCheckedChange={(checked) => updateVariant(index, { manageInventory: checked })} />
-                  <label className="text-xs font-semibold text-muted-foreground">Track inventory</label>
-                </div>
-                {variants.length > 1 && (
-                  <div className="flex items-end justify-end lg:col-span-3">
-                    <Button type="button" variant="outline" size="sm" className="gap-1 text-red-500" onClick={() => removeVariant(index)}>
-                      <Trash2 size={14} /> Remove
-                    </Button>
+            {variants.map((v, index) => {
+              const price = parseFloat(v.price) || 0;
+              const percent = Math.min(99, Math.max(0, Number(v.salePercent) || 0));
+              const salePrice = v.saleEnabled && percent > 0 ? (price * (1 - percent / 100)).toFixed(2) : null;
+
+              return (
+              <div key={v.id || index} className="space-y-4 rounded-lg border p-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="lg:col-span-2 space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Variant title</label>
+                    <Input value={v.title} onChange={(e) => updateVariant(index, { title: e.target.value })} />
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">SKU</label>
+                    <Input value={v.sku} onChange={(e) => updateVariant(index, { sku: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Price (RM)</label>
+                    <Input type="number" step="0.01" min="0" required value={v.price} onChange={(e) => updateVariant(index, { price: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Stock</label>
+                    <Input type="number" min="0" value={v.inventoryQuantity} onChange={(e) => updateVariant(index, { inventoryQuantity: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={v.manageInventory} onCheckedChange={(checked) => updateVariant(index, { manageInventory: checked })} />
+                    <label className="text-xs font-semibold text-muted-foreground">Track inventory</label>
+                  </div>
+                  {variants.length > 1 && (
+                    <Button type="button" variant="outline" size="sm" className="gap-1 text-red-500" onClick={() => removeVariant(index)}>
+                      <Trash2 size={14} /> Remove variant
+                    </Button>
+                  )}
+                </div>
+
+                <div className="rounded-lg bg-[#f8f6ff] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Tag size={16} className="text-[#3a1078]" />
+                      <span className="text-sm font-semibold text-[#001a4d]">Sale / Offer</span>
+                      {v.saleStatus && v.saleStatus !== 'none' && (
+                        <Badge variant={SALE_STATUS_VARIANT[v.saleStatus]}>{SALE_STATUS_LABEL[v.saleStatus]}</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={v.saleEnabled} onCheckedChange={(checked) => updateVariant(index, { saleEnabled: checked })} />
+                      <label className="text-xs font-semibold text-muted-foreground">Run a sale</label>
+                    </div>
+                  </div>
+
+                  {v.saleEnabled && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Discount %</label>
+                        <Input type="number" min="1" max="99" value={v.salePercent} onChange={(e) => updateVariant(index, { salePercent: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Runs for (days)</label>
+                        <Input type="number" min="1" value={v.saleDurationDays} onChange={(e) => updateVariant(index, { saleDurationDays: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Sale price</label>
+                        <div className="flex h-9 items-center rounded-md border border-input bg-white px-3 text-sm font-bold text-[#001a4d]">
+                          {salePrice ? `RM${salePrice}` : '—'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 
