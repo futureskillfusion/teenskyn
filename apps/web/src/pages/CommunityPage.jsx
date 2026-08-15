@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Instagram } from 'lucide-react';
 
-const WHATSAPP_URL = 'https://wa.me/60000000000';
+const WHATSAPP_URL = 'https://wa.me/60183846408';
 const INSTAGRAM_URL = 'https://instagram.com/teenskyn';
 
 export default function CommunityPage() {
