@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Users, LogOut, Menu, Tag } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Users, LogOut, Menu, Tag, Sparkles, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAdminAuth } from '@/admin/context/AdminAuthContext';
@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { to: '/admin/sales', label: 'Sales & Offers', icon: Tag },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { to: '/admin/customers', label: 'Customers', icon: Users },
+  { to: '/admin/services', label: 'Services', icon: Sparkles },
+  { to: '/admin/bookings', label: 'Bookings', icon: CalendarClock },
 ];
 
 function NavLinks({ onNavigate }) {

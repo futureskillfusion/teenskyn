@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, TrendingUp, ShoppingBag, AlertTriangle, Tag } from 'lucide-react';
+import { Loader2, TrendingUp, ShoppingBag, AlertTriangle, Tag, Users, Package, Wallet, Clock, CalendarClock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -9,30 +9,29 @@ import { formatCurrency } from '@/api/EcommerceApi';
 
 const MYR_INFO = { code: 'MYR', symbol: 'RM', template: 'RM$1', decimal_digits: 2 };
 
-function StatCard({ label, value, sub }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="font-display text-3xl font-extrabold text-[#001a4d]">{value}</p>
-        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+function StatBox({ label, value, icon: Icon, to }) {
+  const content = (
+    <Card className={to ? 'h-full transition-colors hover:border-[#FFD700]' : 'h-full'}>
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f8f6ff] text-[#001a4d]">
+          <Icon size={20} />
+        </div>
+        <div className="min-w-0">
+          <p className="font-display text-xl font-extrabold text-[#001a4d] leading-tight truncate">{value}</p>
+          <p className="text-xs text-muted-foreground truncate">{label}</p>
+        </div>
       </CardContent>
     </Card>
   );
+  return to ? <Link to={to}>{content}</Link> : content;
 }
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
-  const [activeSalesCount, setActiveSalesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     adminApi.get('/dashboard/summary').then(setSummary).finally(() => setLoading(false));
-    adminApi.get('/sales').then((data) => {
-      setActiveSalesCount(data.sales.filter((s) => s.sale_status === 'active').length);
-    });
   }, []);
 
   if (loading) {
@@ -41,28 +40,24 @@ export default function DashboardPage() {
 
   if (!summary) return null;
 
+  const s = summary.stats;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-[#001a4d]">Dashboard</h1>
-        <p className="text-muted-foreground">Store performance at a glance.</p>
+        <p className="text-muted-foreground">Your whole store, at a glance.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Revenue today" value={formatCurrency(summary.revenue.today.totalInCents, MYR_INFO)} sub={`${summary.revenue.today.orderCount} orders`} />
-        <StatCard label="Revenue (7 days)" value={formatCurrency(summary.revenue.last7d.totalInCents, MYR_INFO)} sub={`${summary.revenue.last7d.orderCount} orders`} />
-        <StatCard label="Revenue (30 days)" value={formatCurrency(summary.revenue.last30d.totalInCents, MYR_INFO)} sub={`${summary.revenue.last30d.orderCount} orders`} />
-        <Link to="/admin/sales">
-          <Card className="h-full transition-colors hover:border-[#FFD700]">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Tag size={14} /> Active sales</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-display text-3xl font-extrabold text-[#001a4d]">{activeSalesCount}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Manage offers →</p>
-            </CardContent>
-          </Card>
-        </Link>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatBox label="Total customers" value={s.totalCustomers} icon={Users} to="/admin/customers" />
+        <StatBox label="Total orders" value={s.totalOrders} icon={ShoppingBag} to="/admin/orders" />
+        <StatBox label="Total products" value={s.totalProducts} icon={Package} to="/admin/products" />
+        <StatBox label="Total revenue" value={formatCurrency(s.totalRevenueInCents, MYR_INFO)} icon={Wallet} />
+        <StatBox label="Revenue today" value={formatCurrency(s.revenueTodayInCents, MYR_INFO)} icon={TrendingUp} />
+        <StatBox label="Pending orders" value={s.pendingOrders} icon={Clock} to="/admin/orders" />
+        <StatBox label="Active sales" value={s.activeSales} icon={Tag} to="/admin/sales" />
+        <StatBox label="New bookings" value={s.newBookings} icon={CalendarClock} to="/admin/bookings" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

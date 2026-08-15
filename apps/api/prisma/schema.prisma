@@ -148,3 +148,38 @@ model AnalyticsEvent {
   metadata  String?  @db.Text
   createdAt DateTime @default(now())
 }
+
+model Service {
+  id            String    @id @default(cuid())
+  title         String
+  durationText  String
+  priceText     String
+  description   String    @default("") @db.Text
+  order         Int       @default(0)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+}
+
+enum BookingStatus {
+  new
+  contacted
+  confirmed
+  completed
+  cancelled
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  name           String
+  phone          String
+  age            Int?
+  service        String
+  preferredDate  String?
+  preferredTime  String?
+  notes          String?       @db.Text
+  status         BookingStatus @default(new)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}

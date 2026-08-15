@@ -20,10 +20,16 @@ async function revenueSince(date) {
 }
 
 adminDashboardRouter.get('/dashboard/summary', async (req, res) => {
-  const [today, last7d, last30d, statusCounts, recentOrders, lowStock, topProducts, eventCounts] = await Promise.all([
+  const now = new Date();
+  const [
+    today, last7d, last30d, allTime,
+    statusCounts, recentOrders, lowStock, topProducts, eventCounts,
+    totalCustomers, totalOrders, totalProducts, pendingOrders, activeSales, newBookings,
+  ] = await Promise.all([
     revenueSince(daysAgo(0)),
     revenueSince(daysAgo(7)),
     revenueSince(daysAgo(30)),
+    revenueSince(new Date(0)),
     prisma.order.groupBy({ by: ['status'], _count: true }),
     prisma.order.findMany({ take: 10, orderBy: { createdAt: 'desc' }, include: { items: true } }),
     prisma.productVariant.findMany({
@@ -42,9 +48,33 @@ adminDashboardRouter.get('/dashboard/summary', async (req, res) => {
       where: { createdAt: { gte: daysAgo(30) } },
       _count: true,
     }),
+    prisma.customer.count(),
+    prisma.order.count(),
+    prisma.product.count({ where: { status: 'active', deletedAt: null } }),
+    prisma.order.count({ where: { status: 'pending' } }),
+    prisma.productVariant.count({
+      where: {
+        salePriceInCents: { not: null },
+        AND: [
+          { OR: [{ saleStartsAt: null }, { saleStartsAt: { lte: now } }] },
+          { OR: [{ saleEndsAt: null }, { saleEndsAt: { gte: now } }] },
+        ],
+      },
+    }),
+    prisma.booking.count({ where: { status: 'new' } }),
   ]);
 
   res.json({
+    stats: {
+      totalCustomers,
+      totalOrders,
+      totalProducts,
+      totalRevenueInCents: allTime.totalInCents,
+      revenueTodayInCents: today.totalInCents,
+      pendingOrders,
+      activeSales,
+      newBookings,
+    },
     revenue: { today, last7d, last30d },
     ordersByStatus: Object.fromEntries(statusCounts.map((s) => [s.status, s._count])),
     recentOrders,

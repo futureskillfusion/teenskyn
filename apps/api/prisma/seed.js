@@ -80,6 +80,25 @@ async function main() {
     });
     console.log(`Product created: ${p.title}`);
   }
+
+  const seedServices = [
+    { title: 'Teen Clarity Facial', durationText: '45 min', priceText: 'RM55', description: 'Deep cleanse, steam and gentle extractions for congested skin.' },
+    { title: 'First Facial (12-14)', durationText: '30 min', priceText: 'RM38', description: 'A soft intro treatment plus a routine walkthrough with a parent.' },
+    { title: 'Breakout Rescue', durationText: '60 min', priceText: 'RM70', description: 'Targeted acne treatment with LED light and calming mask.' },
+    { title: 'Glow Up Peel', durationText: '40 min', priceText: 'RM65', description: 'Mild enzyme peel for dull skin and post-breakout marks.' },
+    { title: 'Brow Shape & Tint', durationText: '25 min', priceText: 'RM28', description: 'Soft natural shaping designed for growing faces.' },
+    { title: 'Skyn Coaching Session', durationText: '30 min', priceText: 'Free with facial', description: 'One-on-one routine building, product matching, zero judgement.' },
+  ];
+
+  for (const [index, svc] of seedServices.entries()) {
+    const existing = await prisma.service.findFirst({ where: { title: svc.title } });
+    if (existing) {
+      console.log(`Service already exists, skipping: ${svc.title}`);
+      continue;
+    }
+    await prisma.service.create({ data: { ...svc, order: index } });
+    console.log(`Service created: ${svc.title}`);
+  }
 }
 
 main()

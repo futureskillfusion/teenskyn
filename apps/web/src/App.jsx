@@ -3,6 +3,8 @@ import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import ProductsPage from './pages/ProductsPage';
+import CommunityPage from './pages/CommunityPage';
 import { CartProvider } from './hooks/useCart';
 import { Toaster } from '@/components/ui/toaster';
 import AdminApp from './admin/routes';
@@ -14,7 +16,9 @@ function App() {
                 <ScrollToTop />
                 <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductsPage />} />
                     <Route path="/product/:id" element={<ProductDetailPage />} />
+                    <Route path="/community" element={<CommunityPage />} />
                     <Route path="/admin/*" element={<AdminApp />} />
                 </Routes>
                 <Toaster />

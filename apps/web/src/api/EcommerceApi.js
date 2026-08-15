@@ -109,3 +109,30 @@ export async function createCodOrder({ items, customer }) {
     body: JSON.stringify({ items, customer }),
   });
 }
+
+/**
+ * List salon services shown on the Services menu.
+ * @returns {Promise<{services: Array<{id:string, title:string, duration:string, price:string, description:string}>}>}
+ */
+export async function getServices() {
+  return request("/services");
+}
+
+/**
+ * Submit a facial/salon booking request.
+ * @param {Object} params
+ * @param {string} params.name
+ * @param {string} params.phone
+ * @param {number} [params.age]
+ * @param {string} params.service
+ * @param {string} [params.preferredDate]
+ * @param {string} [params.preferredTime]
+ * @param {string} [params.notes]
+ * @returns {Promise<{booking:{id:string}}>}
+ */
+export async function createBooking(params) {
+  return request("/bookings", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}

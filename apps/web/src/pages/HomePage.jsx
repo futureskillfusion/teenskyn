@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Menu, X, Sparkles, Droplets, Moon, Phone, Mail, MapPin, Instagram, Clock, Check, ShoppingCart as CartIcon } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import ProductsList from '@/components/ProductsList';
 import ShoppingCartDrawer from '@/components/ShoppingCart';
 import { useCart } from '@/hooks/useCart';
+import { getServices, createBooking } from '@/api/EcommerceApi';
 
 const NAVY = '#001a4d';
 const YELLOW = '#FFD700';
@@ -53,7 +55,7 @@ const products = [
   },
 ];
 
-const services = [
+const FALLBACK_SERVICES = [
   { name: 'Teen Clarity Facial', time: '45 min', price: '$55', desc: 'Deep cleanse, steam and gentle extractions for congested skin.' },
   { name: 'First Facial (12-14)', time: '30 min', price: '$38', desc: 'A soft intro treatment plus a routine walkthrough with a parent.' },
   { name: 'Breakout Rescue', time: '60 min', price: '$70', desc: 'Targeted acne treatment with LED light and calming mask.' },
@@ -74,16 +76,44 @@ function HomePage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [services, setServices] = useState(FALLBACK_SERVICES);
   const { cartItems } = useCart();
   const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
 
-  const handleSubmit = (label) => (e) => {
+  useEffect(() => {
+    getServices()
+      .then(({ services: fetched }) => {
+        if (fetched?.length) {
+          setServices(fetched.map((s) => ({ name: s.title, time: s.duration, price: s.price, desc: s.description })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleContactSubmit = (e) => {
     e.preventDefault();
     e.target.reset();
-    toast({
-      title: label === 'booking' ? 'Appointment request sent' : 'Message sent',
-      description: 'Our team will get back to you within one working day.',
-    });
+    toast({ title: 'Message sent', description: 'Our team will get back to you within one working day.' });
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    try {
+      await createBooking({
+        name: data.get('name'),
+        phone: data.get('phone'),
+        age: data.get('age') ? Number(data.get('age')) : undefined,
+        service: data.get('service'),
+        preferredDate: data.get('date') || undefined,
+        preferredTime: data.get('time') || undefined,
+        notes: data.get('notes') || undefined,
+      });
+      e.target.reset();
+      toast({ title: 'Appointment request sent', description: 'Our team will get back to you within one working day.' });
+    } catch (err) {
+      toast({ title: 'Something went wrong', description: 'Please try again or contact us directly.', variant: 'destructive' });
+    }
   };
 
   const inputClass =
@@ -115,6 +145,12 @@ function HomePage() {
                 {label}
               </a>
             ))}
+            <Link
+              to="/community"
+              className="rounded-full px-4 py-2 font-display text-lg text-white/90 transition-colors hover:bg-white/10 hover:text-[#FFD700]"
+            >
+              Join Community
+            </Link>
             <a
               href="#booking"
               className="ml-2 rounded-full bg-[#FFD700] px-5 py-2.5 font-display text-lg text-[#001a4d] shadow-[0_4px_0_#b89b00] transition-transform active:translate-y-px"
@@ -151,6 +187,13 @@ function HomePage() {
                 {label}
               </a>
             ))}
+            <Link
+              to="/community"
+              onClick={() => setOpen(false)}
+              className="rounded-xl px-3 py-3 font-display text-xl text-white"
+            >
+              Join Community
+            </Link>
             <a
               href="#booking"
               onClick={() => setOpen(false)}
@@ -345,6 +388,14 @@ function HomePage() {
             </button>
           </div>
           <ProductsList />
+          <div className="mt-10 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-[#001a4d] px-6 py-3 font-display text-lg text-[#001a4d] hover:bg-[#001a4d] hover:text-white transition-colors"
+            >
+              View all products →
+            </Link>
+          </div>
         </div>
       </Section>
 
@@ -416,7 +467,7 @@ function HomePage() {
             </p>
             <img src={SALON} alt="Inside the Teen Skyn salon" className="mt-8 rounded-[2rem] shadow-[0_16px_0_#FFD700]" />
           </div>
-          <form onSubmit={handleSubmit('booking')} className="rounded-[2rem] border-4 border-[#001a4d] bg-[#fffaf0] p-7">
+          <form onSubmit={handleBookingSubmit} className="rounded-[2rem] border-4 border-[#001a4d] bg-[#fffaf0] p-7">
             <div className="grid gap-5">
               <div className="grid gap-2">
                 <label htmlFor="b-name" className="font-display text-lg">Your name</label>
@@ -480,7 +531,7 @@ function HomePage() {
               <li className="flex items-center gap-3"><Instagram size={20} className="text-[#FFD700]" /> @teenskyn</li>
             </ul>
           </div>
-          <form onSubmit={handleSubmit('contact')} className="grid gap-5 rounded-[2rem] bg-white p-7 text-[#001a4d]">
+          <form onSubmit={handleContactSubmit} className="grid gap-5 rounded-[2rem] bg-white p-7 text-[#001a4d]">
             <div className="grid gap-2">
               <label htmlFor="c-name" className="font-display text-lg">Name</label>
               <input id="c-name" name="name" required placeholder="Your name" className={inputClass} />
@@ -516,6 +567,7 @@ function HomePage() {
               {navLinks.map(([label, id]) => (
                 <li key={id}><a href={`#${id}`} className="hover:text-[#FFD700]">{label}</a></li>
               ))}
+              <li><Link to="/community" className="hover:text-[#FFD700]">Join Community</Link></li>
             </ul>
           </div>
           <div>

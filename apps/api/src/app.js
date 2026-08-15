@@ -10,6 +10,8 @@ import { categoriesRouter } from './routes/public/categories.routes.js';
 import { checkoutRouter } from './routes/public/checkout.routes.js';
 import { webhookRouter } from './routes/public/webhook.routes.js';
 import { analyticsRouter } from './routes/public/analytics.routes.js';
+import { bookingsRouter } from './routes/public/bookings.routes.js';
+import { servicesRouter } from './routes/public/services.routes.js';
 
 import { authRouter } from './routes/admin/auth.routes.js';
 import { adminProductsRouter } from './routes/admin/products.routes.js';
@@ -18,6 +20,8 @@ import { adminOrdersRouter } from './routes/admin/orders.routes.js';
 import { adminCustomersRouter } from './routes/admin/customers.routes.js';
 import { adminDashboardRouter } from './routes/admin/dashboard.routes.js';
 import { adminSalesRouter } from './routes/admin/sales.routes.js';
+import { adminBookingsRouter } from './routes/admin/bookings.routes.js';
+import { adminServicesRouter } from './routes/admin/services.routes.js';
 
 import { requireAdminAuth } from './middleware/requireAdminAuth.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -41,6 +45,8 @@ export function createApp() {
   app.use('/api', categoriesRouter);
   app.use('/api', checkoutRouter);
   app.use('/api', analyticsRouter);
+  app.use('/api', bookingsRouter);
+  app.use('/api', servicesRouter);
 
   app.use('/api/admin', authRouter);
   app.use('/api/admin', requireAdminAuth, adminProductsRouter);
@@ -49,6 +55,8 @@ export function createApp() {
   app.use('/api/admin', requireAdminAuth, adminCustomersRouter);
   app.use('/api/admin', requireAdminAuth, adminDashboardRouter);
   app.use('/api/admin', requireAdminAuth, adminSalesRouter);
+  app.use('/api/admin', requireAdminAuth, adminBookingsRouter);
+  app.use('/api/admin', requireAdminAuth, adminServicesRouter);
 
   // In production the built React app (storefront + /admin panel) is served
   // by this same Node process, so the host only needs to run one app.

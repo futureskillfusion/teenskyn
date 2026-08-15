@@ -12,6 +12,8 @@ import OrdersListPage from '@/admin/pages/orders/OrdersListPage';
 import OrderDetailPage from '@/admin/pages/orders/OrderDetailPage';
 import CustomersListPage from '@/admin/pages/customers/CustomersListPage';
 import CustomerDetailPage from '@/admin/pages/customers/CustomerDetailPage';
+import ServicesPage from '@/admin/pages/ServicesPage';
+import BookingsPage from '@/admin/pages/BookingsPage';
 
 export default function AdminApp() {
   return (
@@ -34,6 +36,8 @@ export default function AdminApp() {
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="customers" element={<CustomersListPage />} />
           <Route path="customers/:id" element={<CustomerDetailPage />} />
+          <Route path="services" element={<ServicesPage />} />
+          <Route path="bookings" element={<BookingsPage />} />
         </Route>
       </Routes>
     </AdminAuthProvider>
