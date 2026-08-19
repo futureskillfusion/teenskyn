@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PhpBridgeAdapterFactory } from './phpBridgeAdapter.js';
 
 function parseDatabaseUrl(databaseUrl) {
@@ -19,19 +20,20 @@ function parseDatabaseUrl(databaseUrl) {
 // When DB_BRIDGE_URL is set, route all queries through a small PHP script
 // hosted on the same account's classic hosting, which reaches MySQL over
 // localhost without restriction. See src/lib/phpBridgeAdapter.js.
-let adapter;
-
-if (process.env.DB_BRIDGE_URL) {
-  adapter = new PhpBridgeAdapterFactory({
-    bridgeUrl: process.env.DB_BRIDGE_URL,
-    bridgeSecret: process.env.DB_BRIDGE_SECRET,
-  });
-} else {
-  const { PrismaMariaDb } = await import('@prisma/adapter-mariadb');
-  adapter = new PrismaMariaDb({
-    ...parseDatabaseUrl(process.env.DATABASE_URL),
-    connectionLimit: 5,
-  });
-}
+//
+// NB: this must be a static import + synchronous branch, not a dynamic
+// `await import(...)`. Hostinger's launcher (lsnode.js) loads the entry
+// file via require(), and Node's require(esm) support refuses to load any
+// module in the graph that contains top-level await, even on an unused
+// branch — it throws ERR_REQUIRE_ASYNC_MODULE before your code ever runs.
+const adapter = process.env.DB_BRIDGE_URL
+  ? new PhpBridgeAdapterFactory({
+      bridgeUrl: process.env.DB_BRIDGE_URL,
+      bridgeSecret: process.env.DB_BRIDGE_SECRET,
+    })
+  : new PrismaMariaDb({
+      ...parseDatabaseUrl(process.env.DATABASE_URL),
+      connectionLimit: 5,
+    });
 
 export const prisma = new PrismaClient({ adapter });
